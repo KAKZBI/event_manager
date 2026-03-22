@@ -58,15 +58,23 @@ def clean_phone_number(number)
    end
 end
 #Assignment: Time Targeting
-def add_date(regdate)
-   
-  year = "20" + regdate[6..7]
-  regdate = regdate.gsub(regdate[6..7], year)
-  time = Time.strptime(regdate, "%m/%d/%Y %H:%M")
-
-  $registration_hours.push(time.hour) 
-  $registration_wdays.push(Date::DAYNAMES[time.wday])
-end
+def add_date_in_registration_arrays_in_registration_arrays(regdate)
+  #   Construct the full year from the received string argument
+      year = "20" + regdate[6..7]
+      # Reconstruct the full date with year 
+      regdate = regdate.gsub(regdate[6..7], year)
+      # Construct a time object from the regdate string
+      time = Time.strptime(regdate, "%m/%d/%Y %H:%M")
+      
+      # Add the hour at which this attendee registered to the $registration_hours array
+      $registration_hours.push(time.hour)
+       # Add the day at which this attendee registered to the $registration_wdays array
+      $registration_wdays.push(Date::DAYNAMES[time.wday])
+  end
+  #Global array that contains the varoius hours at which each attendee registered
+  $registration_hours = []
+  #Global array that contains the various week days at which each attendee registered
+  $registration_wdays = []
 def get_peak(contents)
   #create an array containing each content's number of occurrences
   contents_peak = contents.reduce(Hash.new(0)) do |content, occurence|
@@ -89,8 +97,6 @@ def get_peak(contents)
   return contents_final_obj#[hours_final_obj.keys[0]]
 end
 
-$registration_hours = []
-$registration_wdays = []
 puts "Assignment #1: Clean Phone Numbers"
 contents.each do |row|
   name = row[:first_name]
@@ -102,7 +108,7 @@ contents.each do |row|
   # form_letter = erb_template.result(binding)
   # puts form_letter
   regdate = row[:regdate]
-  add_date(regdate)
+  add_date_in_registration_arrays(regdate)
 
   p "#{name} -- #{zipcode} -- #{phone_number}"
 end

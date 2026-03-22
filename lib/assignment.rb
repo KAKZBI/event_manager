@@ -6,6 +6,7 @@ require 'uri'
 require 'erb'
 require 'pry-byebug'
 require 'ostruct'
+require 'time'
 
 def legislators_by_zipcode(zip) 
   api_key = File.read('lib/secret.key').strip
@@ -51,17 +52,60 @@ puts "Event Manager Initialized!"
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
+def clean_phone_number(number)
+  clean_number = number.to_s.gsub(/\D/, "")
+  if clean_number.length < 10 || clean_number.length > 11
+      return  "0000000000"
+  elsif clean_number.length == 10
+    return clean_number
+  elsif clean_number.length == 11
+      return "0000000000" if clean_number[0] != "1"
+      clean_number[1..-1]
+  end
+end
+
+registration_hours = []
+registration_days = []
+
 contents = CSV.open('event_attendees.csv', 
 headers: true,
 header_converters: :symbol
 )
 contents.each do |row|
-  id = row[0]
+  # id = row[0]
   name = row[:first_name]
+  regdate = row[:regdate]
   zipcode = clean_zipcode(row[:zipcode])
   legislators = legislators_by_zipcode(zipcode)
 
   form_letter = erb_template.result(binding)
 
   save_thank_you_letter(id,form_letter)
+  phone = clean_phone_number(row[:homephone])
+  time = Time.strptime(regdate, "%m/%d/%y %H:%M")
+  registration_hours << time.hour
+  registration_days << Date::DAYNAMES[time.wday]
+  
+end
+
+# Output the Time Targeting Results
+puts "\n--- Peak Registration Hours ---"
+
+# sorts by the count in descending order
+hours_tally = registration_hours.tally.sort_by { |hour, count| -count }
+
+hours_tally.each do |hour, count|
+  # formatting the hour to look like "14:00" for readability
+  display_hour = hour.to_s.rjust(2, '0') 
+  puts "#{display_hour}:00 -- #{count} attendees"
+end
+
+
+# Output the Day of the Week Results
+puts "\n--- Peak Registration Days ---"
+
+days_tally = registration_days.tally.sort_by { |day, count| -count }
+
+days_tally.each do |day, count|
+  puts "#{day} -- #{count} attendees"
 end
